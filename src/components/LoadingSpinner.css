@@ -1,7 +1,0 @@
-.loading-spinner {
-  display: inline-block;
-  border: 2.5px solid var(--border);
-  border-top-color: var(--accent);
-  border-radius: 50%;
-  animation: spin 0.7s linear infinite;
-}

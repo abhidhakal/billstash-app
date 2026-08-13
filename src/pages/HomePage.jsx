@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom';
 import BillCard from '../components/BillCard';
 import SpendingRing from '../components/SpendingRing';
 import LoadingSpinner from '../components/LoadingSpinner';
-import './HomePage.css';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -58,11 +57,11 @@ export default function HomePage() {
   return (
     <div className="page">
       {/* Header */}
-      <div className="home-header animate-slide-up">
-        <p className="home-greeting">{getGreeting()}, {firstName}</p>
+      <div className="relative mb-5">
+        <p className="text-xs text-[var(--text-secondary)] mb-1">{getGreeting()}, {firstName}</p>
 
         <button
-          className="home-month-selector"
+          className="inline-flex items-center gap-2 text-lg font-bold text-[var(--text-primary)] px-2 py-1 -ml-2 rounded hover:bg-[var(--bg-hover)] transition-colors"
           onClick={() => setShowMonthPicker(!showMonthPicker)}
         >
           {MONTH_NAMES[month]} {year}
@@ -70,11 +69,15 @@ export default function HomePage() {
         </button>
 
         {showMonthPicker && (
-          <div className="home-month-picker card">
+          <div className="absolute top-full left-0 right-0 mt-2 p-3 grid grid-cols-3 gap-1 z-50 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl shadow-xl">
             {MONTH_NAMES.map((name, i) => (
               <button
                 key={i}
-                className={`home-month-option ${i === month ? 'active' : ''}`}
+                className={`p-2 rounded text-xs transition-colors ${
+                  i === month
+                    ? 'bg-[var(--accent-subtle)] text-[var(--accent)] font-semibold'
+                    : 'text-[var(--text-primary)] hover:bg-[var(--bg-hover)]'
+                }`}
                 onClick={() => {
                   setMonth(i);
                   setShowMonthPicker(false);
@@ -83,24 +86,24 @@ export default function HomePage() {
                 {name}
               </button>
             ))}
-            <div className="home-year-nav">
-              <button onClick={() => setYear(y => y - 1)}>&larr; {year - 1}</button>
-              <span>{year}</span>
-              <button onClick={() => setYear(y => y + 1)}>{year + 1} &rarr;</button>
+            <div className="col-span-full flex items-center justify-between pt-2 mt-2 border-t border-[var(--border)] text-xs text-[var(--text-secondary)]">
+              <button onClick={() => setYear(y => y - 1)} className="hover:text-[var(--accent)]">&larr; {year - 1}</button>
+              <span className="font-semibold">{year}</span>
+              <button onClick={() => setYear(y => y + 1)} className="hover:text-[var(--accent)]">{year + 1} &rarr;</button>
             </div>
           </div>
         )}
       </div>
 
       {/* Spending Summary */}
-      <div className="home-summary card animate-slide-up">
-        <div className="home-summary-content">
-          <div className="home-summary-text">
-            <span className="home-summary-label">Total Spent</span>
-            <span className="home-summary-amount">
+      <div className="p-5 mb-5 bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl shadow-sm">
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-1">
+            <span className="text-[10px] font-bold text-[var(--text-tertiary)] uppercase tracking-wider">Total Spent</span>
+            <span className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight">
               Rs. {(stats?.totalSpent || 0).toLocaleString('en-IN')}
             </span>
-            <span className="home-summary-count">
+            <span className="text-xs text-[var(--text-secondary)]">
               {stats?.billCount || 0} bill{(stats?.billCount || 0) !== 1 ? 's' : ''}
             </span>
           </div>
@@ -109,16 +112,16 @@ export default function HomePage() {
       </div>
 
       {/* Quick Actions */}
-      <div className="home-actions animate-slide-up">
+      <div className="flex gap-3 mb-6">
         <button
-          className="btn btn-primary"
+          className="flex-1 flex items-center justify-center gap-2 py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold text-sm rounded-lg transition-colors"
           onClick={() => navigate('/scan')}
         >
           <Plus size={18} />
           Scan Bill
         </button>
         <button
-          className="btn btn-secondary"
+          className="flex-1 flex items-center justify-center gap-2 py-3 bg-[var(--bg-hover)] hover:bg-[var(--border)] text-[var(--text-primary)] font-semibold text-sm rounded-lg transition-colors"
           onClick={() => navigate('/scan?manual=true')}
         >
           <Plus size={18} />
@@ -127,12 +130,12 @@ export default function HomePage() {
       </div>
 
       {/* Recent Bills */}
-      <div className="section animate-slide-up">
-        <div className="section-header">
-          <h2 className="section-title">Recent Bills</h2>
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-base font-bold text-[var(--text-primary)]">Recent Bills</h2>
           {bills.length > 0 && (
             <button
-              className="btn btn-ghost btn-sm"
+              className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] font-medium"
               onClick={() => navigate('/bills')}
             >
               View All
@@ -141,16 +144,16 @@ export default function HomePage() {
         </div>
 
         {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: 'var(--space-8)' }}>
+          <div className="flex justify-center py-8">
             <LoadingSpinner size={28} />
           </div>
         ) : bills.length === 0 ? (
-          <div className="empty-state">
-            <Receipt size={48} strokeWidth={1} />
-            <p>No bills yet this month. Tap "Scan Bill" to get started.</p>
+          <div className="flex flex-col items-center justify-center p-12 text-center text-[var(--text-tertiary)] bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl">
+            <Receipt size={48} strokeWidth={1} className="mb-4 opacity-40" />
+            <p className="text-sm max-w-[260px]">No bills yet this month. Tap "Scan Bill" to get started.</p>
           </div>
         ) : (
-          <div className="home-bills-list">
+          <div className="px-4 bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl shadow-sm">
             {bills.map((bill) => (
               <BillCard key={bill.id} bill={bill} />
             ))}

@@ -3,7 +3,6 @@ import {
   ShoppingCart, UtensilsCrossed, Zap, Car, ShoppingBag,
   Heart, Film, GraduationCap, Home, MoreHorizontal, Receipt,
 } from 'lucide-react';
-import './BillCard.css';
 
 const iconMap = {
   groceries: ShoppingCart,
@@ -43,20 +42,20 @@ export default function BillCard({ bill }) {
 
   return (
     <div
-      className="bill-card"
+      className="flex items-center gap-3 py-3 border-b border-[var(--border-light)] last:border-b-0 cursor-pointer hover:opacity-80 transition-opacity"
       onClick={() => navigate(`/bills/${bill.id}`)}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && navigate(`/bills/${bill.id}`)}
     >
-      <div className="bill-card-icon">
+      <div className="w-10 h-10 rounded-full bg-[var(--bg-hover)] flex items-center justify-center text-[var(--text-secondary)] shrink-0">
         <IconComponent size={18} strokeWidth={1.5} />
       </div>
-      <div className="bill-card-info">
-        <span className="bill-card-merchant">{bill.merchant || 'Unknown'}</span>
-        <span className="bill-card-date">{formatDate(bill.date)}</span>
+      <div className="flex-1 min-w-0 flex flex-col">
+        <span className="font-semibold text-sm text-[var(--text-primary)] truncate">{bill.merchant || 'Unknown'}</span>
+        <span className="text-xs text-[var(--text-tertiary)]">{formatDate(bill.date)}</span>
       </div>
-      <div className="bill-card-amount">
+      <div className="font-bold text-sm text-[var(--text-primary)] text-right shrink-0">
         {formatAmount(bill.amount)}
       </div>
     </div>

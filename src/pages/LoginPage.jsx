@@ -3,7 +3,6 @@ import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Receipt, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
-import './LoginPage.css';
 
 export default function LoginPage() {
   const { user, signIn, signUp, signInWithGoogle } = useAuth();
@@ -61,32 +60,33 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="login-page">
-      <div className="login-container animate-fade-in">
-        <div className="login-brand">
-          <div className="login-logo">
+    <div className="min-h-dvh flex items-center justify-center p-5 bg-[var(--bg-primary)]">
+      <div className="w-full max-w-[380px] animate-fade-in">
+        <div className="text-center mb-8">
+          <div className="w-14 h-14 inline-flex items-center justify-center bg-[var(--accent-subtle)] text-[var(--accent)] rounded-2xl mb-4">
             <Receipt size={28} strokeWidth={1.5} />
           </div>
-          <h1 className="login-title">BillStash</h1>
-          <p className="login-subtitle">Track every bill, effortlessly.</p>
+          <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">BillStash</h1>
+          <p className="text-sm text-[var(--text-secondary)] mt-1">Track every bill, effortlessly.</p>
         </div>
 
-        <form className="login-form" onSubmit={handleSubmit}>
+        <form className="flex flex-col gap-3" onSubmit={handleSubmit}>
           {isSignUp && (
-            <div className="login-field">
-              <User size={18} className="login-field-icon" />
+            <div className="relative flex items-center">
+              <User size={18} className="absolute left-3.5 text-[var(--text-tertiary)] pointer-events-none" />
               <input
                 type="text"
                 placeholder="Full name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 autoComplete="name"
+                className="w-full h-12 pl-11 pr-4 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm outline-none focus:border-[var(--accent)] text-[var(--text-primary)]"
               />
             </div>
           )}
 
-          <div className="login-field">
-            <Mail size={18} className="login-field-icon" />
+          <div className="relative flex items-center">
+            <Mail size={18} className="absolute left-3.5 text-[var(--text-tertiary)] pointer-events-none" />
             <input
               type="email"
               placeholder="Email address"
@@ -94,11 +94,12 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               required
               autoComplete="email"
+              className="w-full h-12 pl-11 pr-4 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm outline-none focus:border-[var(--accent)] text-[var(--text-primary)]"
             />
           </div>
 
-          <div className="login-field">
-            <Lock size={18} className="login-field-icon" />
+          <div className="relative flex items-center">
+            <Lock size={18} className="absolute left-3.5 text-[var(--text-tertiary)] pointer-events-none" />
             <input
               type={showPassword ? 'text' : 'password'}
               placeholder="Password"
@@ -107,10 +108,11 @@ export default function LoginPage() {
               required
               minLength={6}
               autoComplete={isSignUp ? 'new-password' : 'current-password'}
+              className="w-full h-12 pl-11 pr-11 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm outline-none focus:border-[var(--accent)] text-[var(--text-primary)]"
             />
             <button
               type="button"
-              className="login-field-toggle"
+              className="absolute right-2 w-9 h-9 flex items-center justify-center text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] rounded"
               onClick={() => setShowPassword(!showPassword)}
               tabIndex={-1}
             >
@@ -118,23 +120,25 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {error && <p className="login-error">{error}</p>}
+          {error && <p className="text-xs text-[var(--destructive)] text-center p-2 bg-[var(--destructive-subtle)] rounded-md">{error}</p>}
 
           <button
             type="submit"
-            className="btn btn-primary btn-lg btn-full"
+            className="w-full py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold text-sm rounded-lg transition-colors flex items-center justify-center disabled:opacity-50 mt-1"
             disabled={loading}
           >
             {loading ? <LoadingSpinner size={20} color="#fff" /> : (isSignUp ? 'Create Account' : 'Sign In')}
           </button>
         </form>
 
-        <div className="login-divider">
-          <span>or</span>
+        <div className="flex items-center gap-4 my-5">
+          <div className="flex-1 h-px bg-[var(--border)]" />
+          <span className="text-xs text-[var(--text-tertiary)]">or</span>
+          <div className="flex-1 h-px bg-[var(--border)]" />
         </div>
 
         <button
-          className="btn btn-outline btn-lg btn-full login-google-btn"
+          className="w-full py-3 bg-[var(--bg-card)] border border-[var(--border)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] font-semibold text-sm rounded-lg transition-colors flex items-center justify-center gap-3 disabled:opacity-50"
           onClick={handleGoogle}
           disabled={loading}
         >
@@ -147,11 +151,11 @@ export default function LoginPage() {
           Continue with Google
         </button>
 
-        <p className="login-toggle">
+        <p className="text-center text-xs text-[var(--text-secondary)] mt-6">
           {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
           <button
             type="button"
-            className="login-toggle-btn"
+            className="text-[var(--accent)] hover:underline font-semibold"
             onClick={() => { setIsSignUp(!isSignUp); setError(''); }}
           >
             {isSignUp ? 'Sign In' : 'Sign Up'}

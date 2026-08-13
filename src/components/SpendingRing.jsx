@@ -1,5 +1,3 @@
-import './SpendingRing.css';
-
 export default function SpendingRing({
   amount = 0,
   size = 120,
@@ -8,7 +6,6 @@ export default function SpendingRing({
 }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  // For visual purposes, cap at 100% (no target defined, just animate in)
   const progress = Math.min(amount > 0 ? 0.75 : 0, 1);
   const offset = circumference - progress * circumference;
 
@@ -20,9 +17,8 @@ export default function SpendingRing({
   }
 
   return (
-    <div className="spending-ring" style={{ width: size, height: size }}>
+    <div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        {/* Background track */}
         <circle
           cx={size / 2}
           cy={size / 2}
@@ -31,9 +27,8 @@ export default function SpendingRing({
           stroke="var(--border)"
           strokeWidth={strokeWidth}
         />
-        {/* Progress arc */}
         <circle
-          className="spending-ring-progress"
+          className="transition-[stroke-dashoffset] duration-700 ease-out"
           cx={size / 2}
           cy={size / 2}
           r={radius}
@@ -46,9 +41,9 @@ export default function SpendingRing({
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </svg>
-      <div className="spending-ring-content">
-        <span className="spending-ring-amount">{formatAmount(amount)}</span>
-        <span className="spending-ring-label">{label}</span>
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-2">
+        <span className="font-bold text-sm text-[var(--text-primary)] leading-tight">{formatAmount(amount)}</span>
+        <span className="text-[10px] text-[var(--text-tertiary)] mt-0.5">{label}</span>
       </div>
     </div>
   );

@@ -5,7 +5,6 @@ import { CATEGORIES } from '../services/receiptParser';
 import { Search, Filter, Receipt } from 'lucide-react';
 import BillCard from '../components/BillCard';
 import LoadingSpinner from '../components/LoadingSpinner';
-import './BillsPage.css';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -46,7 +45,6 @@ export default function BillsPage() {
     }
   }
 
-  // Debounced search
   useEffect(() => {
     if (!user) return;
     const timeout = setTimeout(loadBills, 300);
@@ -57,26 +55,29 @@ export default function BillsPage() {
 
   return (
     <div className="page">
-      <div className="page-header">
-        <h1 className="page-title">Bills</h1>
-        <p className="page-subtitle">
+      <div className="mb-6">
+        <h1 className="text-xl font-bold text-[var(--text-primary)]">Bills</h1>
+        <p className="text-xs text-[var(--text-secondary)] mt-1">
           {MONTH_NAMES[month]} {year} · {bills.length} bill{bills.length !== 1 ? 's' : ''} · Rs. {totalAmount.toLocaleString('en-IN')}
         </p>
       </div>
 
       {/* Search & Filter */}
-      <div className="bills-search-row">
-        <div className="bills-search">
-          <Search size={18} className="bills-search-icon" />
+      <div className="flex gap-2 mb-4">
+        <div className="relative flex-1 flex items-center">
+          <Search size={18} className="absolute left-3.5 text-[var(--text-tertiary)] pointer-events-none" />
           <input
             type="text"
             placeholder="Search merchants..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 bg-[var(--bg-input)] border border-[var(--border)] rounded-lg text-sm outline-none focus:border-[var(--accent)] text-[var(--text-primary)]"
           />
         </div>
         <button
-          className={`btn btn-icon ${showFilters ? 'btn-secondary' : 'btn-ghost'}`}
+          className={`w-10 h-10 flex items-center justify-center rounded-lg border border-[var(--border)] transition-colors ${
+            showFilters ? 'bg-[var(--accent-subtle)] text-[var(--accent)]' : 'bg-[var(--bg-card)] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)]'
+          }`}
           onClick={() => setShowFilters(!showFilters)}
           aria-label="Toggle filters"
         >
@@ -85,34 +86,37 @@ export default function BillsPage() {
       </div>
 
       {showFilters && (
-        <div className="bills-filters animate-slide-up">
-          <div className="bills-filter-group">
-            <label>Month</label>
+        <div className="grid grid-cols-2 gap-3 p-4 mb-4 bg-[var(--bg-card)] border border-[var(--border)] rounded-xl">
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-[var(--text-secondary)] font-medium">Month</label>
             <select
               value={month}
               onChange={(e) => setMonth(parseInt(e.target.value))}
+              className="p-2 text-xs bg-[var(--bg-input)] border border-[var(--border)] rounded-lg outline-none text-[var(--text-primary)]"
             >
               {MONTH_NAMES.map((name, i) => (
                 <option key={i} value={i}>{name}</option>
               ))}
             </select>
           </div>
-          <div className="bills-filter-group">
-            <label>Year</label>
+          <div className="flex flex-col gap-1">
+            <label className="text-xs text-[var(--text-secondary)] font-medium">Year</label>
             <select
               value={year}
               onChange={(e) => setYear(parseInt(e.target.value))}
+              className="p-2 text-xs bg-[var(--bg-input)] border border-[var(--border)] rounded-lg outline-none text-[var(--text-primary)]"
             >
               {[2024, 2025, 2026, 2027].map((y) => (
                 <option key={y} value={y}>{y}</option>
               ))}
             </select>
           </div>
-          <div className="bills-filter-group bills-filter-full">
-            <label>Category</label>
+          <div className="col-span-full flex flex-col gap-1">
+            <label className="text-xs text-[var(--text-secondary)] font-medium">Category</label>
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
+              className="p-2 text-xs bg-[var(--bg-input)] border border-[var(--border)] rounded-lg outline-none text-[var(--text-primary)]"
             >
               <option value="all">All Categories</option>
               {CATEGORIES.map((cat) => (
@@ -125,21 +129,19 @@ export default function BillsPage() {
 
       {/* Bills List */}
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
+        <div className="flex justify-center py-12">
           <LoadingSpinner size={28} />
         </div>
       ) : bills.length === 0 ? (
-        <div className="empty-state">
-          <Receipt size={48} strokeWidth={1} />
-          <p>No bills found. Try adjusting your filters.</p>
+        <div className="flex flex-col items-center justify-center p-12 text-center text-[var(--text-tertiary)] bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl">
+          <Receipt size={48} strokeWidth={1} className="mb-4 opacity-40" />
+          <p className="text-sm max-w-[260px]">No bills found. Try adjusting your filters.</p>
         </div>
       ) : (
-        <div className="bills-list card">
-          <div className="bills-list-inner">
-            {bills.map((bill) => (
-              <BillCard key={bill.id} bill={bill} />
-            ))}
-          </div>
+        <div className="px-4 bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl shadow-sm">
+          {bills.map((bill) => (
+            <BillCard key={bill.id} bill={bill} />
+          ))}
         </div>
       )}
     </div>

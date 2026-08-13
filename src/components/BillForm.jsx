@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { CATEGORIES } from '../services/receiptParser';
-import './BillForm.css';
 
 export default function BillForm({
   initialData = {},
@@ -29,27 +28,28 @@ export default function BillForm({
   }
 
   return (
-    <form className="bill-form" onSubmit={handleSubmit}>
+    <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
       {imagePreview && (
-        <div className="bill-form-image">
-          <img src={imagePreview} alt="Receipt" />
+        <div className="rounded-lg overflow-hidden border border-[var(--border)] max-h-[200px]">
+          <img src={imagePreview} alt="Receipt" className="w-full h-full object-cover" />
         </div>
       )}
 
-      <div className="bill-form-field">
-        <label htmlFor="merchant">Merchant</label>
+      <div className="flex flex-col gap-1">
+        <label htmlFor="merchant" className="text-xs font-semibold text-[var(--text-secondary)]">Merchant</label>
         <input
           id="merchant"
           type="text"
           value={merchant}
           onChange={(e) => setMerchant(e.target.value)}
           placeholder="e.g. BigMart"
+          className="w-full px-3 py-2 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded-lg outline-none focus:border-[var(--accent)] text-[var(--text-primary)]"
           required
         />
       </div>
 
-      <div className="bill-form-field">
-        <label htmlFor="amount">Amount (Rs.)</label>
+      <div className="flex flex-col gap-1">
+        <label htmlFor="amount" className="text-xs font-semibold text-[var(--text-secondary)]">Amount (Rs.)</label>
         <input
           id="amount"
           type="number"
@@ -58,28 +58,31 @@ export default function BillForm({
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           placeholder="0.00"
+          className="w-full px-3 py-2 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded-lg outline-none focus:border-[var(--accent)] text-[var(--text-primary)]"
           required
         />
       </div>
 
-      <div className="bill-form-row">
-        <div className="bill-form-field">
-          <label htmlFor="date">Date</label>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1">
+          <label htmlFor="date" className="text-xs font-semibold text-[var(--text-secondary)]">Date</label>
           <input
             id="date"
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
+            className="w-full px-3 py-2 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded-lg outline-none focus:border-[var(--accent)] text-[var(--text-primary)]"
             required
           />
         </div>
 
-        <div className="bill-form-field">
-          <label htmlFor="category">Category</label>
+        <div className="flex flex-col gap-1">
+          <label htmlFor="category" className="text-xs font-semibold text-[var(--text-secondary)]">Category</label>
           <select
             id="category"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
+            className="w-full px-3 py-2 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded-lg outline-none focus:border-[var(--accent)] text-[var(--text-primary)]"
           >
             {CATEGORIES.map((cat) => (
               <option key={cat.value} value={cat.value}>
@@ -90,35 +93,38 @@ export default function BillForm({
         </div>
       </div>
 
-      <div className="bill-form-field">
-        <label htmlFor="notes">Notes (optional)</label>
+      <div className="flex flex-col gap-1">
+        <label htmlFor="notes" className="text-xs font-semibold text-[var(--text-secondary)]">Notes (optional)</label>
         <textarea
           id="notes"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
           placeholder="Add any notes..."
           rows={2}
+          className="w-full px-3 py-2 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded-lg outline-none focus:border-[var(--accent)] text-[var(--text-primary)] resize-none"
         />
       </div>
 
       {initialData.rawText && (
-        <div className="bill-form-raw">
+        <div className="mt-1">
           <button
             type="button"
-            className="btn btn-ghost btn-sm"
+            className="text-xs text-[var(--text-secondary)] hover:text-[var(--text-primary)] py-1"
             onClick={() => setShowRawText(!showRawText)}
           >
             {showRawText ? 'Hide' : 'Show'} OCR Text
           </button>
           {showRawText && (
-            <pre className="bill-form-raw-text">{initialData.rawText}</pre>
+            <pre className="p-3 text-xs bg-[var(--bg-hover)] border border-[var(--border)] rounded-md font-mono whitespace-pre-wrap max-h-40 overflow-y-auto mt-1">
+              {initialData.rawText}
+            </pre>
           )}
         </div>
       )}
 
       <button
         type="submit"
-        className="btn btn-primary btn-lg btn-full"
+        className="w-full py-3 mt-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white font-semibold text-sm rounded-lg transition-colors disabled:opacity-50"
         disabled={loading || !merchant || !amount}
       >
         {loading ? 'Saving...' : submitLabel}

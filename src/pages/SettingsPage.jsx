@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getBills, exportToCSV } from '../services/billService';
 import { User, Moon, Sun, Monitor, Download, LogOut, Receipt } from 'lucide-react';
-import './SettingsPage.css';
 
 function getTheme() {
   return localStorage.getItem('billstash-theme') || 'system';
@@ -52,25 +51,25 @@ export default function SettingsPage() {
 
   return (
     <div className="page">
-      <div className="page-header">
-        <h1 className="page-title">Settings</h1>
+      <div className="mb-6">
+        <h1 className="text-xl font-bold text-[var(--text-primary)]">Settings</h1>
       </div>
 
       {/* Profile */}
-      <div className="settings-section">
-        <div className="settings-profile card">
-          <div className="settings-avatar">
+      <div className="mb-6">
+        <div className="flex items-center gap-3 p-4 bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl shadow-sm">
+          <div className="w-12 h-12 rounded-full overflow-hidden bg-[var(--accent-subtle)] text-[var(--accent)] flex items-center justify-center shrink-0">
             {user?.photoURL ? (
-              <img src={user.photoURL} alt="" />
+              <img src={user.photoURL} alt="" className="w-full h-full object-cover" />
             ) : (
               <User size={24} />
             )}
           </div>
-          <div className="settings-profile-info">
-            <span className="settings-profile-name">
+          <div className="flex flex-col min-w-0">
+            <span className="text-sm font-bold text-[var(--text-primary)] truncate">
               {user?.displayName || 'User'}
             </span>
-            <span className="settings-profile-email">
+            <span className="text-xs text-[var(--text-secondary)] truncate">
               {user?.email}
             </span>
           </div>
@@ -78,26 +77,38 @@ export default function SettingsPage() {
       </div>
 
       {/* Appearance */}
-      <div className="settings-section">
-        <h2 className="section-title">Appearance</h2>
-        <div className="settings-group card">
-          <div className="settings-theme-options">
+      <div className="mb-6">
+        <h2 className="text-sm font-bold text-[var(--text-primary)] mb-3">Appearance</h2>
+        <div className="p-3 bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl shadow-sm">
+          <div className="grid grid-cols-3 gap-2">
             <button
-              className={`settings-theme-btn ${currentTheme === 'light' ? 'active' : ''}`}
+              className={`flex items-center justify-center gap-2 p-2.5 rounded-lg text-xs font-semibold transition-colors ${
+                currentTheme === 'light'
+                  ? 'bg-[var(--accent-subtle)] text-[var(--accent)] border border-[var(--accent)]'
+                  : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
               onClick={() => handleThemeChange('light')}
             >
               <Sun size={18} />
               Light
             </button>
             <button
-              className={`settings-theme-btn ${currentTheme === 'dark' ? 'active' : ''}`}
+              className={`flex items-center justify-center gap-2 p-2.5 rounded-lg text-xs font-semibold transition-colors ${
+                currentTheme === 'dark'
+                  ? 'bg-[var(--accent-subtle)] text-[var(--accent)] border border-[var(--accent)]'
+                  : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
               onClick={() => handleThemeChange('dark')}
             >
               <Moon size={18} />
               Dark
             </button>
             <button
-              className={`settings-theme-btn ${currentTheme === 'system' ? 'active' : ''}`}
+              className={`flex items-center justify-center gap-2 p-2.5 rounded-lg text-xs font-semibold transition-colors ${
+                currentTheme === 'system'
+                  ? 'bg-[var(--accent-subtle)] text-[var(--accent)] border border-[var(--accent)]'
+                  : 'bg-[var(--bg-hover)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+              }`}
               onClick={() => handleThemeChange('system')}
             >
               <Monitor size={18} />
@@ -108,36 +119,36 @@ export default function SettingsPage() {
       </div>
 
       {/* Data */}
-      <div className="settings-section">
-        <h2 className="section-title">Data</h2>
-        <div className="settings-group card">
+      <div className="mb-6">
+        <h2 className="text-sm font-bold text-[var(--text-primary)] mb-3">Data</h2>
+        <div className="bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl shadow-sm overflow-hidden">
           <button
-            className="settings-row"
+            className="w-full flex items-center gap-3 p-4 text-xs font-semibold text-[var(--text-primary)] hover:bg-[var(--bg-hover)] transition-colors text-left"
             onClick={handleExport}
             disabled={exporting}
           >
-            <Download size={18} className="settings-row-icon" />
+            <Download size={18} className="text-[var(--text-secondary)]" />
             <span>{exporting ? 'Exporting...' : 'Export Bills as CSV'}</span>
           </button>
         </div>
       </div>
 
       {/* Account */}
-      <div className="settings-section">
-        <h2 className="section-title">Account</h2>
-        <div className="settings-group card">
+      <div className="mb-8">
+        <h2 className="text-sm font-bold text-[var(--text-primary)] mb-3">Account</h2>
+        <div className="bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl shadow-sm overflow-hidden">
           <button
-            className="settings-row settings-row-destructive"
+            className="w-full flex items-center gap-3 p-4 text-xs font-semibold text-[var(--destructive)] hover:bg-[var(--destructive-subtle)] transition-colors text-left"
             onClick={handleSignOut}
           >
-            <LogOut size={18} className="settings-row-icon" />
+            <LogOut size={18} />
             <span>Sign Out</span>
           </button>
         </div>
       </div>
 
       {/* App Info */}
-      <div className="settings-footer">
+      <div className="flex items-center justify-center gap-2 text-xs text-[var(--text-tertiary)] py-4">
         <Receipt size={16} />
         <span>BillStash v1.0.0</span>
       </div>

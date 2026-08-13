@@ -1,12 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { getMonthlyStats } from '../services/billService';
 import { CATEGORIES } from '../services/receiptParser';
-import { ChevronLeft, ChevronRight, TrendingUp, Receipt, Store } from 'lucide-react';
+import { ChevronLeft, ChevronRight, TrendingUp } from 'lucide-react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
 import { Doughnut, Bar } from 'react-chartjs-2';
 import LoadingSpinner from '../components/LoadingSpinner';
-import './AnalyticsPage.css';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement);
 
@@ -15,18 +14,17 @@ const MONTH_NAMES = [
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
-// Monochrome + green palette for charts
 const CHART_COLORS = [
-  '#22C55E', // accent green
-  '#6B7280', // gray
-  '#9CA3AF', // lighter gray
-  '#4B5563', // darker gray
-  '#D1D5DB', // very light gray
-  '#374151', // charcoal
-  '#16A34A', // darker green
-  '#A3A3A3', // neutral gray
-  '#E5E7EB', // border gray
-  '#52525B', // zinc
+  '#22C55E',
+  '#6B7280',
+  '#9CA3AF',
+  '#4B5563',
+  '#D1D5DB',
+  '#374151',
+  '#16A34A',
+  '#A3A3A3',
+  '#E5E7EB',
+  '#52525B',
 ];
 
 export default function AnalyticsPage() {
@@ -73,7 +71,6 @@ export default function AnalyticsPage() {
     }
   }
 
-  // Chart data
   const categoryData = stats ? (() => {
     const entries = Object.entries(stats.byCategory).sort(([, a], [, b]) => b.total - a.total);
     return {
@@ -92,9 +89,8 @@ export default function AnalyticsPage() {
     const labels = [];
     const data = [];
     for (let d = 1; d <= daysInMonth; d++) {
-      const dayStr = String(d).padStart(2, '0');
       labels.push(d);
-      data.push(stats.byDay[dayStr] || 0);
+      data.push(stats.byDay[String(d).padStart(2, '0')] || 0);
     }
     const today = now.getDate();
     return {
@@ -177,62 +173,62 @@ export default function AnalyticsPage() {
   return (
     <div className="page">
       {/* Month Selector */}
-      <div className="analytics-month-nav">
-        <button className="btn btn-ghost btn-icon" onClick={prevMonth}>
+      <div className="flex items-center justify-between mb-6">
+        <button className="w-9 h-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition-colors" onClick={prevMonth}>
           <ChevronLeft size={20} />
         </button>
-        <h1 className="analytics-month-title">
+        <h1 className="text-lg font-bold text-[var(--text-primary)]">
           {MONTH_NAMES[month]} {year}
         </h1>
-        <button className="btn btn-ghost btn-icon" onClick={nextMonth}>
+        <button className="w-9 h-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition-colors" onClick={nextMonth}>
           <ChevronRight size={20} />
         </button>
       </div>
 
       {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
+        <div className="flex justify-center py-12">
           <LoadingSpinner size={28} />
         </div>
       ) : !stats || stats.billCount === 0 ? (
-        <div className="empty-state">
-          <TrendingUp size={48} strokeWidth={1} />
-          <p>No spending data for this month.</p>
+        <div className="flex flex-col items-center justify-center p-12 text-center text-[var(--text-tertiary)] bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl">
+          <TrendingUp size={48} strokeWidth={1} className="mb-4 opacity-40" />
+          <p className="text-sm">No spending data for this month.</p>
         </div>
       ) : (
-        <div className="analytics-content animate-fade-in">
+        <div className="flex flex-col gap-6 animate-fade-in">
           {/* Stats Cards */}
-          <div className="analytics-stats">
-            <div className="analytics-stat card">
-              <span className="analytics-stat-value">Rs. {stats.totalSpent.toLocaleString('en-IN')}</span>
-              <span className="analytics-stat-label">Total Spent</span>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="flex flex-col items-center gap-1 p-4 bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl text-center shadow-sm">
+              <span className="text-sm font-bold text-[var(--text-primary)]">Rs. {stats.totalSpent.toLocaleString('en-IN')}</span>
+              <span className="text-xs text-[var(--text-tertiary)]">Total Spent</span>
             </div>
-            <div className="analytics-stat card">
-              <span className="analytics-stat-value">{stats.billCount}</span>
-              <span className="analytics-stat-label">Bills</span>
+            <div className="flex flex-col items-center gap-1 p-4 bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl text-center shadow-sm">
+              <span className="text-sm font-bold text-[var(--text-primary)]">{stats.billCount}</span>
+              <span className="text-xs text-[var(--text-tertiary)]">Bills</span>
             </div>
-            <div className="analytics-stat card">
-              <span className="analytics-stat-value">Rs. {Math.round(stats.avgPerBill).toLocaleString('en-IN')}</span>
-              <span className="analytics-stat-label">Avg / Bill</span>
+            <div className="flex flex-col items-center gap-1 p-4 bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl text-center shadow-sm">
+              <span className="text-sm font-bold text-[var(--text-primary)]">Rs. {Math.round(stats.avgPerBill).toLocaleString('en-IN')}</span>
+              <span className="text-xs text-[var(--text-tertiary)]">Avg / Bill</span>
             </div>
           </div>
 
           {/* Category Breakdown */}
           {categoryData && categoryData.labels.length > 0 && (
-            <div className="analytics-section">
-              <h2 className="section-title">By Category</h2>
-              <div className="analytics-chart-card card">
-                <div className="analytics-doughnut-container">
+            <div>
+              <h2 className="text-sm font-bold text-[var(--text-primary)] mb-3">By Category</h2>
+              <div className="p-4 bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl shadow-sm">
+                <div className="max-w-[200px] mx-auto mb-4">
                   <Doughnut data={categoryData} options={doughnutOptions} />
                 </div>
-                <div className="analytics-legend">
+                <div className="flex flex-col gap-2">
                   {categoryData.labels.map((label, i) => (
-                    <div key={label} className="analytics-legend-item">
+                    <div key={label} className="flex items-center gap-2 text-xs">
                       <span
-                        className="analytics-legend-dot"
+                        className="w-2 h-2 rounded-full shrink-0"
                         style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}
                       />
-                      <span className="analytics-legend-label">{label}</span>
-                      <span className="analytics-legend-value">
+                      <span className="flex-1 text-[var(--text-primary)]">{label}</span>
+                      <span className="text-[var(--text-secondary)] font-semibold">
                         Rs. {categoryData.datasets[0].data[i].toLocaleString('en-IN')}
                       </span>
                     </div>
@@ -244,10 +240,10 @@ export default function AnalyticsPage() {
 
           {/* Daily Spending */}
           {dailyData && (
-            <div className="analytics-section">
-              <h2 className="section-title">Daily Spending</h2>
-              <div className="analytics-chart-card card">
-                <div className="analytics-bar-container">
+            <div>
+              <h2 className="text-sm font-bold text-[var(--text-primary)] mb-3">Daily Spending</h2>
+              <div className="p-4 bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl shadow-sm">
+                <div className="h-48">
                   <Bar data={dailyData} options={barOptions} />
                 </div>
               </div>
@@ -256,23 +252,23 @@ export default function AnalyticsPage() {
 
           {/* Top Merchants */}
           {stats.topMerchants.length > 0 && (
-            <div className="analytics-section">
-              <h2 className="section-title">Top Merchants</h2>
-              <div className="card">
-                <div className="analytics-merchants">
-                  {stats.topMerchants.map((m, i) => (
-                    <div key={m.name} className="analytics-merchant-row">
-                      <span className="analytics-merchant-rank">{i + 1}</span>
-                      <div className="analytics-merchant-info">
-                        <span className="analytics-merchant-name">{m.name}</span>
-                        <span className="analytics-merchant-count">{m.count} bill{m.count !== 1 ? 's' : ''}</span>
-                      </div>
-                      <span className="analytics-merchant-total">
-                        Rs. {m.total.toLocaleString('en-IN')}
-                      </span>
+            <div>
+              <h2 className="text-sm font-bold text-[var(--text-primary)] mb-3">Top Merchants</h2>
+              <div className="bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl shadow-sm px-4 divide-y divide-[var(--border-light)]">
+                {stats.topMerchants.map((m, i) => (
+                  <div key={m.name} className="flex items-center gap-3 py-3">
+                    <span className="w-6 h-6 flex items-center justify-center text-xs font-semibold text-[var(--text-tertiary)] bg-[var(--bg-hover)] rounded-full shrink-0">
+                      {i + 1}
+                    </span>
+                    <div className="flex-1 flex flex-col min-w-0">
+                      <span className="text-xs font-semibold text-[var(--text-primary)] truncate">{m.name}</span>
+                      <span className="text-[10px] text-[var(--text-tertiary)]">{m.count} bill{m.count !== 1 ? 's' : ''}</span>
                     </div>
-                  ))}
-                </div>
+                    <span className="text-xs font-bold text-[var(--text-primary)]">
+                      Rs. {m.total.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                ))}
               </div>
             </div>
           )}
