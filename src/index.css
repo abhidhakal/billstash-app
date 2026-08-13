@@ -175,12 +175,6 @@ body {
   flex-direction: column;
 }
 
-@media (min-width: 768px) {
-  #root {
-    padding-left: var(--sidebar-width);
-  }
-}
-
 /* ---- Links ---- */
 a {
   color: var(--accent);
@@ -365,7 +359,8 @@ label {
 
 @media (min-width: 768px) {
   .page {
-    margin: 0 auto;
+    margin-left: calc(var(--sidebar-width) + max(0px, (100vw - var(--sidebar-width) - 680px) / 2));
+    margin-right: auto;
     max-width: 680px;
     padding: var(--space-8) var(--space-5);
     padding-bottom: var(--space-8);
