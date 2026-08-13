@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getMonthlyStats } from '../services/billService';
+import { getMonthlyStats, getBills, findRecurringExpenses } from '../services/billService';
 import { CATEGORIES } from '../services/receiptParser';
 import { ChevronLeft, ChevronRight, TrendingUp } from 'lucide-react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement } from 'chart.js';
@@ -35,6 +35,8 @@ export default function AnalyticsPage() {
   const [year, setYear] = useState(now.getFullYear());
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [recurring, setRecurring] = useState([]);
 
   useEffect(() => {
     if (!user) return;
@@ -44,10 +46,18 @@ export default function AnalyticsPage() {
   async function loadStats() {
     setLoading(true);
     try {
-      const data = await getMonthlyStats(user.uid, month, year);
-      setStats(data);
+      setError('');
+      const previous = month === 0 ? { month: 11, year: year - 1 } : { month: month - 1, year };
+      const [data, previousData, allBills] = await Promise.all([
+        getMonthlyStats(user.uid, month, year),
+        getMonthlyStats(user.uid, previous.month, previous.year),
+        getBills(user.uid),
+      ]);
+      setStats({ ...data, previousTotal: previousData.totalSpent });
+      setRecurring(findRecurringExpenses(allBills));
     } catch (err) {
       console.error('Failed to load stats:', err);
+      setError('Analytics could not be loaded.');
     } finally {
       setLoading(false);
     }
@@ -174,13 +184,13 @@ export default function AnalyticsPage() {
     <div className="page">
       {/* Month Selector */}
       <div className="flex items-center justify-between mb-6">
-        <button className="w-9 h-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition-colors" onClick={prevMonth}>
+        <button aria-label="Previous month" className="w-9 h-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition-colors" onClick={prevMonth}>
           <ChevronLeft size={20} />
         </button>
         <h1 className="text-lg font-bold text-[var(--text-primary)]">
           {MONTH_NAMES[month]} {year}
         </h1>
-        <button className="w-9 h-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition-colors" onClick={nextMonth}>
+        <button aria-label="Next month" className="w-9 h-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition-colors" onClick={nextMonth}>
           <ChevronRight size={20} />
         </button>
       </div>
@@ -189,6 +199,11 @@ export default function AnalyticsPage() {
         <div className="flex justify-center py-12">
           <LoadingSpinner size={28} />
         </div>
+      ) : error ? (
+        <div className="p-6 text-center bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl">
+          <p className="text-sm text-[var(--destructive)]">{error}</p>
+          <button className="mt-3 px-4 py-2 text-xs font-semibold rounded-lg bg-[var(--accent)] text-white" onClick={loadStats}>Retry</button>
+        </div>
       ) : !stats || stats.billCount === 0 ? (
         <div className="flex flex-col items-center justify-center p-12 text-center text-[var(--text-tertiary)] bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl">
           <TrendingUp size={48} strokeWidth={1} className="mb-4 opacity-40" />
@@ -196,6 +211,14 @@ export default function AnalyticsPage() {
         </div>
       ) : (
         <div className="flex flex-col gap-6 animate-fade-in">
+          {stats.previousTotal > 0 && (
+            <div className="p-4 bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl shadow-sm">
+              <p className="text-xs font-bold text-[var(--text-primary)]">Month-over-month</p>
+              <p className="text-sm text-[var(--text-secondary)] mt-1">
+                You spent <span className="font-bold text-[var(--text-primary)]">{Math.abs(Math.round(((stats.totalSpent - stats.previousTotal) / stats.previousTotal) * 100))}% {stats.totalSpent >= stats.previousTotal ? 'more' : 'less'}</span> than last month.
+              </p>
+            </div>
+          )}
           {/* Stats Cards */}
           <div className="grid grid-cols-3 gap-3">
             <div className="flex flex-col items-center gap-1 p-4 bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl text-center shadow-sm">
@@ -269,6 +292,22 @@ export default function AnalyticsPage() {
                     </span>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+          {recurring.length > 0 && (
+            <div>
+              <h2 className="text-sm font-bold text-[var(--text-primary)] mb-3">Recurring expenses</h2>
+              <div className="p-4 bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl shadow-sm">
+                <p className="text-xs text-[var(--text-secondary)] mb-3">Repeated merchant and amount combinations found in this month.</p>
+                <div className="flex flex-col gap-2">
+                  {recurring.slice(0, 5).map((item) => (
+                    <div key={`${item.merchant}-${item.amount}`} className="flex justify-between text-xs">
+                      <span className="font-semibold text-[var(--text-primary)]">{item.merchant}</span>
+                      <span className="text-[var(--text-secondary)]">Rs. {item.amount.toLocaleString('en-IN')} · {item.count} times</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}

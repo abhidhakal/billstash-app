@@ -17,6 +17,7 @@ export default function BillForm({
 
   function handleSubmit(e) {
     e.preventDefault();
+    if (!merchant.trim() || !amount || Number(amount) < 0 || !date) return;
     onSubmit({
       merchant,
       amount: parseFloat(amount) || 0,

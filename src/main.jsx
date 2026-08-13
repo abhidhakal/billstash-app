@@ -7,6 +7,12 @@ import './index.css';
 const savedTheme = localStorage.getItem('billstash-theme') || 'system';
 document.documentElement.setAttribute('data-theme', savedTheme);
 
+if (savedTheme === 'system') {
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    document.documentElement.setAttribute('data-theme', 'system');
+  });
+}
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
     <App />

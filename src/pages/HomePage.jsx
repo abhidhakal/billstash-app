@@ -30,6 +30,7 @@ export default function HomePage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showMonthPicker, setShowMonthPicker] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!user) return;
@@ -39,6 +40,7 @@ export default function HomePage() {
   async function loadData() {
     setLoading(true);
     try {
+      setError('');
       const [billsData, statsData] = await Promise.all([
         getBills(user.uid, { month, year }),
         getMonthlyStats(user.uid, month, year),
@@ -47,6 +49,7 @@ export default function HomePage() {
       setStats(statsData);
     } catch (err) {
       console.error('Failed to load data:', err);
+      setError('Your spending data could not be loaded.');
     } finally {
       setLoading(false);
     }
@@ -96,6 +99,7 @@ export default function HomePage() {
       </div>
 
       {/* Spending Summary */}
+      {error && <div className="p-3 mb-4 text-xs text-[var(--destructive)] bg-[var(--destructive-subtle)] rounded-lg text-center">{error} <button className="font-bold underline ml-1" onClick={loadData}>Retry</button></div>}
       <div className="p-5 mb-5 bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex flex-col gap-1">

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getBills, exportToCSV } from '../services/billService';
-import { User, Moon, Sun, Monitor, Download, LogOut, Receipt } from 'lucide-react';
+import { getBills, exportToCSV, deleteAllBills } from '../services/billService';
+import { User, Moon, Sun, Monitor, Download, LogOut, Receipt, ShieldCheck, Trash2 } from 'lucide-react';
 
 function getTheme() {
   return localStorage.getItem('billstash-theme') || 'system';
@@ -13,9 +13,11 @@ function setTheme(theme) {
 }
 
 export default function SettingsPage() {
-  const { user, signOut } = useAuth();
+  const { user, signOut, deleteAccount } = useAuth();
   const [currentTheme, setCurrentTheme] = useState(getTheme());
   const [exporting, setExporting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState('');
 
   function handleThemeChange(theme) {
     setCurrentTheme(theme);
@@ -49,8 +51,24 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleDeleteAccount() {
+    if (!window.confirm('Delete your account and all bills and receipt images? This cannot be undone.')) return;
+    setDeleting(true);
+    setError('');
+    try {
+      await deleteAllBills(user.uid);
+      await deleteAccount();
+    } catch (err) {
+      setError(err.code === 'auth/requires-recent-login'
+        ? 'For security, sign in again before deleting your account.'
+        : 'Account deletion failed. Your data was not fully removed.');
+      setDeleting(false);
+    }
+  }
+
   return (
     <div className="page">
+      {error && <div className="p-3 mb-4 text-xs text-center text-[var(--destructive)] bg-[var(--destructive-subtle)] rounded-lg">{error}</div>}
       <div className="mb-6">
         <h1 className="text-xl font-bold text-[var(--text-primary)]">Settings</h1>
       </div>
@@ -133,6 +151,18 @@ export default function SettingsPage() {
         </div>
       </div>
 
+      <div className="mb-6">
+        <h2 className="text-sm font-bold text-[var(--text-primary)] mb-3">Privacy</h2>
+        <div className="p-4 bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl shadow-sm">
+          <div className="flex items-start gap-3">
+            <ShieldCheck size={18} className="text-[var(--accent)] mt-0.5 shrink-0" />
+            <p className="text-xs leading-relaxed text-[var(--text-secondary)]">
+              Your bills and receipt images are stored in your private Firebase account. BillStash does not share your spending data with other users. Use the CSV export above to keep a portable copy of your records.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Account */}
       <div className="mb-8">
         <h2 className="text-sm font-bold text-[var(--text-primary)] mb-3">Account</h2>
@@ -143,6 +173,10 @@ export default function SettingsPage() {
           >
             <LogOut size={18} />
             <span>Sign Out</span>
+          </button>
+          <button disabled={deleting} onClick={handleDeleteAccount} className="w-full flex items-center gap-3 p-4 text-xs font-semibold text-[var(--destructive)] hover:bg-[var(--destructive-subtle)] transition-colors text-left border-t border-[var(--border-light)] disabled:opacity-50">
+            <Trash2 size={18} />
+            <span>{deleting ? 'Deleting account...' : 'Delete account and all data'}</span>
           </button>
         </div>
       </div>

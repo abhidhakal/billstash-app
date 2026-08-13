@@ -9,6 +9,9 @@ import {
   query,
   where,
   orderBy,
+  documentId,
+  limit,
+  startAfter,
   Timestamp,
 } from 'firebase/firestore';
 import {
@@ -43,7 +46,7 @@ function validateAndSanitizeBill(billData) {
 
   // Date validation (YYYY-MM-DD)
   let date = billData.date;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+  if (!isValidISODate(date)) {
     date = new Date().toISOString().split('T')[0];
   }
 
@@ -55,6 +58,37 @@ function validateAndSanitizeBill(billData) {
     notes,
     rawText,
   };
+}
+
+export async function getBillsPage(uid, filters = {}) {
+  if (!uid) throw new Error('Unauthorized request');
+  const constraints = [orderBy('date', 'desc'), orderBy(documentId(), 'desc')];
+  if (filters.month !== undefined && filters.year !== undefined) {
+    const month = String(filters.month + 1).padStart(2, '0');
+    const next = filters.month === 11 ? `${filters.year + 1}-01-01` : `${filters.year}-${String(filters.month + 2).padStart(2, '0')}-01`;
+    constraints.unshift(where('date', '>=', `${filters.year}-${month}-01`));
+    constraints.splice(1, 0, where('date', '<', next));
+  }
+  if (filters.category && filters.category !== 'all' && ALLOWED_CATEGORIES.has(filters.category)) {
+    constraints.push(where('category', '==', filters.category));
+  }
+  if (filters.cursor) constraints.push(startAfter(filters.cursor.date, filters.cursor.id));
+  constraints.push(limit(filters.pageSize || 25));
+  const snapshot = await getDocs(query(billsCollection(uid), ...constraints));
+  let bills = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+  if (filters.search) {
+    const term = sanitizeText(filters.search, 50).toLowerCase();
+    bills = bills.filter((b) => (b.merchant || '').toLowerCase().includes(term) || (b.notes || '').toLowerCase().includes(term));
+  }
+  const last = snapshot.docs.at(-1);
+  return { bills, hasMore: snapshot.docs.length === (filters.pageSize || 25), cursor: last ? { date: last.data().date, id: last.id } : null };
+}
+
+export function isValidISODate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
 }
 
 /**
@@ -70,7 +104,7 @@ function billsCollection(uid) {
 /**
  * Upload a receipt image to Firebase Storage with security validation.
  */
-async function uploadReceiptImage(uid, billId, imageFile) {
+export async function uploadReceiptImage(uid, billId, imageFile) {
   if (!ALLOWED_IMAGE_TYPES.has(imageFile.type)) {
     throw new Error('Invalid file type. Only JPEG, PNG, WEBP, and GIF images are allowed.');
   }
@@ -89,6 +123,17 @@ async function uploadReceiptImage(uid, billId, imageFile) {
 
   const imageUrl = await getDownloadURL(storageRef);
 
+  return { imageUrl, imagePath };
+}
+
+export async function replaceReceiptImage(uid, bill, imageFile) {
+  if (!uid || !bill?.id || !imageFile) throw new Error('Invalid receipt image request');
+  const { imageUrl, imagePath } = await uploadReceiptImage(uid, bill.id, imageFile);
+  const docRef = doc(db, 'users', uid, 'bills', bill.id);
+  if (bill.imagePath) {
+    try { await deleteObject(ref(storage, bill.imagePath)); } catch (err) { console.warn('Old receipt cleanup failed:', err); }
+  }
+  await updateDoc(docRef, { imageUrl, imagePath, imageUploadError: '' });
   return { imageUrl, imagePath };
 }
 
@@ -120,6 +165,8 @@ export async function addBill(uid, billData, imageFile = null) {
       docData.imagePath = imagePath;
     } catch (err) {
       console.error('Image upload security error:', err);
+      docData.imageUploadError = err.message || 'Receipt image upload failed';
+      await updateDoc(docRef, { imageUploadError: docData.imageUploadError });
     }
   }
 
@@ -134,6 +181,15 @@ export async function getBills(uid, filters = {}) {
 
   const constraints = [orderBy('date', 'desc')];
 
+  if (filters.month !== undefined && filters.year !== undefined) {
+    const month = String(filters.month + 1).padStart(2, '0');
+    const next = filters.month === 11
+      ? `${filters.year + 1}-01-01`
+      : `${filters.year}-${String(filters.month + 2).padStart(2, '0')}-01`;
+    constraints.unshift(where('date', '>=', `${filters.year}-${month}-01`));
+    constraints.splice(1, 0, where('date', '<', next));
+  }
+
   if (filters.category && filters.category !== 'all' && ALLOWED_CATEGORIES.has(filters.category)) {
     constraints.push(where('category', '==', filters.category));
   }
@@ -146,7 +202,7 @@ export async function getBills(uid, filters = {}) {
     ...doc.data(),
   }));
 
-  // Client-side date filtering
+  // Keep this fallback for legacy records with malformed/missing dates.
   if (filters.month !== undefined && filters.year !== undefined) {
     const monthStr = String(filters.month + 1).padStart(2, '0');
     const yearStr = String(filters.year);
@@ -165,6 +221,37 @@ export async function getBills(uid, filters = {}) {
   }
 
   return bills;
+}
+
+export function findRecurringExpenses(bills = []) {
+  const groups = new Map();
+  bills.forEach((bill) => {
+    const merchant = (bill.merchant || '').trim().toLowerCase();
+    const amount = Number(bill.amount);
+    if (!merchant || !Number.isFinite(amount) || amount <= 0) return;
+    const key = `${merchant}:${amount.toFixed(2)}`;
+    const current = groups.get(key) || { merchant: bill.merchant, amount, dates: [], count: 0 };
+    current.dates.push(bill.date);
+    current.count += 1;
+    groups.set(key, current);
+  });
+  return [...groups.values()]
+    .filter((item) => item.count >= 2)
+    .sort((a, b) => b.count - a.count || b.amount - a.amount);
+}
+
+/** Find likely duplicate bills before saving a newly scanned receipt. */
+export async function findDuplicateBills(uid, billData) {
+  if (!uid || !billData) return [];
+  const bills = await getBills(uid);
+  const merchant = sanitizeText(billData.merchant || '').toLowerCase();
+  const amount = Number(billData.amount);
+  return bills.filter((bill) => {
+    const sameMerchant = merchant && (bill.merchant || '').toLowerCase() === merchant;
+    const sameAmount = Number(bill.amount) === amount;
+    const sameDate = bill.date === billData.date;
+    return sameMerchant && sameAmount && sameDate;
+  }).slice(0, 3);
 }
 
 /**
@@ -189,7 +276,8 @@ export async function getBillById(uid, billId) {
 export async function updateBill(uid, billId, updates) {
   if (!uid || !billId) throw new Error('Unauthorized request');
 
-  const sanitized = validateAndSanitizeBill(updates);
+  const existing = await getBillById(uid, billId);
+  const sanitized = validateAndSanitizeBill({ ...existing, ...updates });
   const docRef = doc(db, 'users', uid, 'bills', billId);
 
   await updateDoc(docRef, {
@@ -218,6 +306,12 @@ export async function deleteBill(uid, billId) {
 
   const docRef = doc(db, 'users', uid, 'bills', billId);
   await deleteDoc(docRef);
+}
+
+export async function deleteAllBills(uid) {
+  if (!uid) throw new Error('Unauthorized request');
+  const bills = await getBills(uid);
+  await Promise.all(bills.map((bill) => deleteBill(uid, bill.id)));
 }
 
 /**

@@ -6,6 +6,7 @@ import {
   signInWithPopup,
   signOut as firebaseSignOut,
   updateProfile,
+  deleteUser,
 } from 'firebase/auth';
 import { auth, googleProvider } from '../config/firebase';
 
@@ -49,6 +50,11 @@ export function AuthProvider({ children }) {
     return firebaseSignOut(auth);
   }
 
+  async function deleteAccount() {
+    if (!auth.currentUser) throw new Error('No signed-in user');
+    return deleteUser(auth.currentUser);
+  }
+
   const value = {
     user,
     loading,
@@ -56,6 +62,7 @@ export function AuthProvider({ children }) {
     signUp,
     signInWithGoogle,
     signOut,
+    deleteAccount,
   };
 
   return (

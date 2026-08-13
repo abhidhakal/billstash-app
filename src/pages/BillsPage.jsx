@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getBills } from '../services/billService';
+import { getBills, getBillsPage } from '../services/billService';
 import { CATEGORIES } from '../services/receiptParser';
 import { Search, Filter, Receipt } from 'lucide-react';
 import BillCard from '../components/BillCard';
@@ -22,6 +22,9 @@ export default function BillsPage() {
   const [month, setMonth] = useState(now.getMonth());
   const [year, setYear] = useState(now.getFullYear());
   const [showFilters, setShowFilters] = useState(false);
+  const [error, setError] = useState('');
+  const [hasMore, setHasMore] = useState(false);
+  const [cursor, setCursor] = useState(null);
 
   useEffect(() => {
     if (!user) return;
@@ -31,17 +34,33 @@ export default function BillsPage() {
   async function loadBills() {
     setLoading(true);
     try {
-      const data = await getBills(user.uid, {
+      setError('');
+      const page = await getBillsPage(user.uid, {
         month,
         year,
         category: categoryFilter,
         search,
       });
-      setBills(data);
+      setBills(page.bills);
+      setHasMore(page.hasMore);
+      setCursor(page.cursor);
     } catch (err) {
       console.error('Failed to load bills:', err);
+      setError('Bills could not be loaded.');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadMore() {
+    if (!cursor || !hasMore) return;
+    try {
+      const page = await getBillsPage(user.uid, { month, year, category: categoryFilter, search, cursor });
+      setBills((current) => [...current, ...page.bills]);
+      setHasMore(page.hasMore);
+      setCursor(page.cursor);
+    } catch (err) {
+      setError('More bills could not be loaded.');
     }
   }
 
@@ -132,16 +151,22 @@ export default function BillsPage() {
         <div className="flex justify-center py-12">
           <LoadingSpinner size={28} />
         </div>
+      ) : error ? (
+        <div className="p-6 text-center bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl">
+          <p className="text-sm text-[var(--destructive)]">{error}</p>
+          <button className="mt-3 px-4 py-2 text-xs font-semibold rounded-lg bg-[var(--accent)] text-white" onClick={loadBills}>Retry</button>
+        </div>
       ) : bills.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-12 text-center text-[var(--text-tertiary)] bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl">
           <Receipt size={48} strokeWidth={1} className="mb-4 opacity-40" />
           <p className="text-sm max-w-[260px]">No bills found. Try adjusting your filters.</p>
         </div>
       ) : (
-        <div className="px-4 bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl shadow-sm">
-          {bills.map((bill) => (
-            <BillCard key={bill.id} bill={bill} />
-          ))}
+        <div>
+          <div className="px-4 bg-[var(--bg-card)] border border-[var(--border-light)] rounded-2xl shadow-sm">
+            {bills.map((bill) => <BillCard key={bill.id} bill={bill} />)}
+          </div>
+          {hasMore && <button className="w-full mt-4 py-3 text-sm font-semibold text-[var(--accent-text)] bg-[var(--bg-card)] border border-[var(--border)] rounded-lg" onClick={loadMore}>Load more bills</button>}
         </div>
       )}
     </div>

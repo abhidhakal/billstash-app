@@ -71,7 +71,8 @@ export async function scanReceipt(imageFile, onProgress = () => {}) {
   try {
     const processedImage = await preprocessImage(imageFile);
 
-    worker = await createWorker('eng', 1, {
+    const languages = import.meta.env.VITE_OCR_LANGUAGES || 'eng';
+    worker = await createWorker(languages, 1, {
       logger: (info) => {
         if (info.status === 'recognizing text' && typeof info.progress === 'number') {
           onProgress(Math.round(info.progress * 100));

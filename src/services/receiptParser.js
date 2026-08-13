@@ -16,6 +16,13 @@ export function sanitizeText(str = '', maxLength = 500) {
     .slice(0, maxLength);
 }
 
+function formatLocalDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 /**
  * Extract the total amount from receipt text.
  */
@@ -93,7 +100,7 @@ function extractDate(text) {
       }
 
       if (date && !isNaN(date.getTime()) && date.getFullYear() > 2000) {
-        return date.toISOString().split('T')[0];
+        return formatLocalDate(date);
       }
     }
   }
@@ -160,7 +167,7 @@ export function parseReceipt(text) {
     return {
       merchant: '',
       amount: null,
-      date: new Date().toISOString().split('T')[0],
+      date: formatLocalDate(new Date()),
       notes: '',
       rawText: '',
     };

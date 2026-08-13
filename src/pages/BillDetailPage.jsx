@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getBillById, updateBill, deleteBill } from '../services/billService';
+import { getBillById, updateBill, deleteBill, replaceReceiptImage } from '../services/billService';
 import { CATEGORIES } from '../services/receiptParser';
-import { ArrowLeft, Trash2, Edit3, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Trash2, Edit3, ChevronDown, ChevronUp, ExternalLink, Upload } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 function formatAmount(amount) {
@@ -38,6 +38,8 @@ export default function BillDetailPage() {
   const [showRawText, setShowRawText] = useState(false);
   const [showFullImage, setShowFullImage] = useState(false);
   const [editData, setEditData] = useState({});
+  const [error, setError] = useState('');
+  const [replacingImage, setReplacingImage] = useState(false);
 
   useEffect(() => {
     loadBill();
@@ -56,6 +58,7 @@ export default function BillDetailPage() {
       });
     } catch (err) {
       console.error('Failed to load bill:', err);
+      setError('This bill could not be loaded.');
     } finally {
       setLoading(false);
     }
@@ -86,6 +89,22 @@ export default function BillDetailPage() {
     }
   }
 
+  async function handleReplaceImage(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setReplacingImage(true);
+    setError('');
+    try {
+      const image = await replaceReceiptImage(user.uid, bill, file);
+      setBill({ ...bill, ...image, imageUploadError: '' });
+    } catch (err) {
+      setError('Receipt image could not be uploaded.');
+    } finally {
+      setReplacingImage(false);
+      event.target.value = '';
+    }
+  }
+
   const categoryLabel = CATEGORIES.find(c => c.value === bill?.category)?.label || 'Other';
 
   if (loading) {
@@ -99,7 +118,7 @@ export default function BillDetailPage() {
   if (!bill) {
     return (
       <div className="page text-center py-12">
-        <p className="text-sm text-[var(--text-secondary)] mb-4">Bill not found.</p>
+        <p className="text-sm text-[var(--text-secondary)] mb-4">{error || 'Bill not found.'}</p>
         <button className="px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition-colors" onClick={() => navigate(-1)}>Go Back</button>
       </div>
     );
@@ -109,17 +128,17 @@ export default function BillDetailPage() {
     <div className="page">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <button className="w-9 h-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition-colors" onClick={() => navigate(-1)}>
+        <button aria-label="Go back" className="w-9 h-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition-colors" onClick={() => navigate(-1)}>
           <ArrowLeft size={20} />
         </button>
         <div className="flex items-center gap-1">
-          <button
+          <button aria-label="Edit bill"
             className="w-9 h-9 flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)] rounded-lg transition-colors"
             onClick={() => setEditing(!editing)}
           >
             <Edit3 size={18} />
           </button>
-          <button
+          <button aria-label="Delete bill"
             className="w-9 h-9 flex items-center justify-center text-[var(--destructive)] hover:bg-[var(--destructive-subtle)] rounded-lg transition-colors"
             onClick={handleDelete}
             disabled={deleting}
@@ -130,6 +149,15 @@ export default function BillDetailPage() {
       </div>
 
       {/* Receipt Image */}
+      {bill.imageUploadError && (
+        <div className="p-3 mb-4 text-xs text-[var(--destructive)] bg-[var(--destructive-subtle)] rounded-lg text-center">
+          The receipt image was not uploaded. Your bill details are safe, but you may want to add the image again.
+        </div>
+      )}
+      <label className="flex items-center justify-center gap-2 mb-4 py-2.5 text-xs font-semibold text-[var(--text-secondary)] bg-[var(--bg-card)] border border-[var(--border)] rounded-lg cursor-pointer hover:bg-[var(--bg-hover)]">
+        <Upload size={16} /> {replacingImage ? 'Uploading receipt...' : 'Replace receipt image'}
+        <input type="file" accept="image/*" className="sr-only" onChange={handleReplaceImage} disabled={replacingImage} />
+      </label>
       {bill.imageUrl && (
         <>
           <div

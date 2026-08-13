@@ -64,7 +64,7 @@ export default function LoginPage() {
       <div className="w-full max-w-[380px] animate-fade-in">
         <div className="text-center mb-8">
           <div className="w-16 h-16 inline-flex items-center justify-center rounded-2xl mb-4 overflow-hidden shadow-sm">
-            <img src="/icons/billstash-logo.png" alt="BillStash Logo" className="w-full h-full object-contain" />
+            <img src="/icons/logo.png" alt="BillStash Logo" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-tight">BillStash</h1>
           <p className="text-sm text-[var(--text-secondary)] mt-1">Track every bill, effortlessly.</p>
