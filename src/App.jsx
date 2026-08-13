@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import BottomNav from './components/BottomNav';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 import LoginPage from './pages/LoginPage';
 import HomePage from './pages/HomePage';
 import BillsPage from './pages/BillsPage';
@@ -66,6 +67,7 @@ export default function App() {
           />
         </Routes>
         <BottomNav />
+        <PWAInstallPrompt />
       </BrowserRouter>
     </AuthProvider>
   );
