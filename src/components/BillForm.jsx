@@ -94,12 +94,12 @@ export default function BillForm({
       </div>
 
       <div className="flex flex-col gap-1">
-        <label htmlFor="notes" className="text-xs font-semibold text-[var(--text-secondary)]">Notes (optional)</label>
+        <label htmlFor="notes" className="text-xs font-semibold text-[var(--text-secondary)]">Items / Notes (optional)</label>
         <textarea
           id="notes"
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
-          placeholder="Add any notes..."
+          placeholder="e.g. Milk, Rice, Coffee..."
           rows={2}
           className="w-full px-3 py-2 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded-lg outline-none focus:border-[var(--accent)] text-[var(--text-primary)] resize-none"
         />

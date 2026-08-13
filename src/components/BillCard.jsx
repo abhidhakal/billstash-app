@@ -53,10 +53,15 @@ export default function BillCard({ bill }) {
       </div>
       <div className="flex-1 min-w-0 flex flex-col">
         <span className="font-semibold text-sm text-[var(--text-primary)] truncate">{bill.merchant || 'Unknown'}</span>
-        <span className="text-xs text-[var(--text-tertiary)]">{formatDate(bill.date)}</span>
+        {bill.notes ? (
+          <span className="text-xs text-[var(--text-secondary)] truncate">{bill.notes}</span>
+        ) : (
+          <span className="text-xs text-[var(--text-tertiary)]">{formatDate(bill.date)}</span>
+        )}
       </div>
-      <div className="font-bold text-sm text-[var(--text-primary)] text-right shrink-0">
-        {formatAmount(bill.amount)}
+      <div className="flex flex-col items-end shrink-0">
+        <span className="font-bold text-sm text-[var(--text-primary)]">{formatAmount(bill.amount)}</span>
+        {bill.notes && <span className="text-[10px] text-[var(--text-tertiary)]">{formatDate(bill.date)}</span>}
       </div>
     </div>
   );
