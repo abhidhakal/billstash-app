@@ -1,7 +1,20 @@
 /**
  * Parse OCR text from a receipt and extract structured data.
  * Uses regex patterns to find total amount, date, and merchant name.
+ * Sanitizes input to prevent XSS & injection attacks.
  */
+
+/**
+ * Sanitize text input: strip HTML tags, control chars, and enforce length limit.
+ */
+export function sanitizeText(str = '', maxLength = 500) {
+  if (typeof str !== 'string') return '';
+  return str
+    .replace(/<[^>]*>/g, '') // strip HTML tags
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, '') // strip control chars
+    .trim()
+    .slice(0, maxLength);
+}
 
 /**
  * Extract the total amount from receipt text.
@@ -117,11 +130,10 @@ function extractMerchant(text) {
     const cleaned = line.replace(/[^a-zA-Z\s]/g, '').trim();
     if (cleaned.length >= 3 && !/^\d/.test(line)) {
       // Capitalize first letter of each word
-      return cleaned
+      return sanitizeText(cleaned
         .split(/\s+/)
         .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-        .join(' ')
-        .slice(0, 50);
+        .join(' '), 100);
     }
   }
 
@@ -134,7 +146,7 @@ function extractMerchant(text) {
  * @returns {{ merchant: string, amount: number|null, date: string, rawText: string }}
  */
 export function parseReceipt(text) {
-  if (!text || text.trim().length === 0) {
+  if (!text || typeof text !== 'string' || text.trim().length === 0) {
     return {
       merchant: '',
       amount: null,
@@ -143,11 +155,13 @@ export function parseReceipt(text) {
     };
   }
 
+  const cleanRawText = sanitizeText(text, 10000);
+
   return {
-    merchant: extractMerchant(text),
-    amount: extractAmount(text),
-    date: extractDate(text),
-    rawText: text.trim(),
+    merchant: extractMerchant(cleanRawText),
+    amount: extractAmount(cleanRawText),
+    date: extractDate(cleanRawText),
+    rawText: cleanRawText,
   };
 }
 

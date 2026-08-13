@@ -18,23 +18,75 @@ import {
   deleteObject,
 } from 'firebase/storage';
 import { db, storage } from '../config/firebase';
+import { sanitizeText, CATEGORIES } from './receiptParser';
+
+const ALLOWED_CATEGORIES = new Set(CATEGORIES.map(c => c.value));
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/gif']);
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB limit
+
+/**
+ * Validate and sanitize bill inputs to prevent XSS and database corruption.
+ */
+function validateAndSanitizeBill(billData) {
+  const merchant = sanitizeText(billData.merchant || 'Unknown', 100);
+  const notes = sanitizeText(billData.notes || '', 1000);
+  const rawText = sanitizeText(billData.rawText || '', 10000);
+
+  let amount = parseFloat(billData.amount);
+  if (isNaN(amount) || !isFinite(amount) || amount < 0) {
+    amount = 0;
+  } else if (amount > 10000000) {
+    amount = 10000000;
+  }
+
+  const category = ALLOWED_CATEGORIES.has(billData.category) ? billData.category : 'other';
+
+  // Date validation (YYYY-MM-DD)
+  let date = billData.date;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    date = new Date().toISOString().split('T')[0];
+  }
+
+  return {
+    merchant: merchant || 'Unknown',
+    amount,
+    date,
+    category,
+    notes,
+    rawText,
+  };
+}
 
 /**
  * Get the bills subcollection reference for a user.
  */
 function billsCollection(uid) {
+  if (!uid || typeof uid !== 'string') {
+    throw new Error('Unauthorized: Invalid User ID');
+  }
   return collection(db, 'users', uid, 'bills');
 }
 
 /**
- * Upload a receipt image to Firebase Storage.
- * @returns {{ imageUrl: string, imagePath: string }}
+ * Upload a receipt image to Firebase Storage with security validation.
  */
 async function uploadReceiptImage(uid, billId, imageFile) {
+  if (!ALLOWED_IMAGE_TYPES.has(imageFile.type)) {
+    throw new Error('Invalid file type. Only JPEG, PNG, WEBP, and GIF images are allowed.');
+  }
+
+  if (imageFile.size > MAX_IMAGE_SIZE) {
+    throw new Error('File size exceeds the 10MB limit.');
+  }
+
   const imagePath = `users/${uid}/receipts/${billId}_${Date.now()}.jpg`;
   const storageRef = ref(storage, imagePath);
 
-  await uploadBytes(storageRef, imageFile);
+  await uploadBytes(storageRef, imageFile, {
+    contentType: imageFile.type,
+    customMetadata: { uploadedBy: uid }
+  });
+
   const imageUrl = await getDownloadURL(storageRef);
 
   return { imageUrl, imagePath };
@@ -44,14 +96,13 @@ async function uploadReceiptImage(uid, billId, imageFile) {
  * Add a new bill to Firestore.
  */
 export async function addBill(uid, billData, imageFile = null) {
+  if (!uid) throw new Error('Unauthorized request');
+
+  const sanitized = validateAndSanitizeBill(billData);
   const now = Timestamp.now();
+
   const docData = {
-    merchant: billData.merchant || 'Unknown',
-    amount: parseFloat(billData.amount) || 0,
-    date: billData.date || new Date().toISOString().split('T')[0],
-    category: billData.category || 'other',
-    notes: billData.notes || '',
-    rawText: billData.rawText || '',
+    ...sanitized,
     imageUrl: '',
     imagePath: '',
     createdAt: now,
@@ -68,7 +119,7 @@ export async function addBill(uid, billData, imageFile = null) {
       docData.imageUrl = imageUrl;
       docData.imagePath = imagePath;
     } catch (err) {
-      console.error('Image upload failed:', err);
+      console.error('Image upload security error:', err);
     }
   }
 
@@ -79,9 +130,11 @@ export async function addBill(uid, billData, imageFile = null) {
  * Get all bills for a user, optionally filtered by month/year and category.
  */
 export async function getBills(uid, filters = {}) {
+  if (!uid) throw new Error('Unauthorized request');
+
   const constraints = [orderBy('date', 'desc')];
 
-  if (filters.category && filters.category !== 'all') {
+  if (filters.category && filters.category !== 'all' && ALLOWED_CATEGORIES.has(filters.category)) {
     constraints.push(where('category', '==', filters.category));
   }
 
@@ -93,7 +146,7 @@ export async function getBills(uid, filters = {}) {
     ...doc.data(),
   }));
 
-  // Client-side date filtering (Firestore doesn't support range on string dates + orderBy together easily)
+  // Client-side date filtering
   if (filters.month !== undefined && filters.year !== undefined) {
     const monthStr = String(filters.month + 1).padStart(2, '0');
     const yearStr = String(filters.year);
@@ -101,9 +154,9 @@ export async function getBills(uid, filters = {}) {
     bills = bills.filter((b) => b.date && b.date.startsWith(prefix));
   }
 
-  // Client-side search
+  // Client-side search with sanitization
   if (filters.search) {
-    const searchLower = filters.search.toLowerCase();
+    const searchLower = sanitizeText(filters.search, 50).toLowerCase();
     bills = bills.filter(
       (b) =>
         (b.merchant && b.merchant.toLowerCase().includes(searchLower)) ||
@@ -115,38 +168,45 @@ export async function getBills(uid, filters = {}) {
 }
 
 /**
- * Get a single bill by ID.
+ * Get a single bill by ID with IDOR check.
  */
 export async function getBillById(uid, billId) {
+  if (!uid || !billId) throw new Error('Unauthorized request');
+
   const docRef = doc(db, 'users', uid, 'bills', billId);
   const docSnap = await getDoc(docRef);
 
   if (!docSnap.exists()) {
-    throw new Error('Bill not found');
+    throw new Error('Bill not found or access denied');
   }
 
   return { id: docSnap.id, ...docSnap.data() };
 }
 
 /**
- * Update a bill.
+ * Update a bill with sanitization.
  */
 export async function updateBill(uid, billId, updates) {
+  if (!uid || !billId) throw new Error('Unauthorized request');
+
+  const sanitized = validateAndSanitizeBill(updates);
   const docRef = doc(db, 'users', uid, 'bills', billId);
+
   await updateDoc(docRef, {
-    ...updates,
+    ...sanitized,
     updatedAt: Timestamp.now(),
   });
 }
 
 /**
- * Delete a bill and its receipt image.
+ * Delete a bill and its receipt image with IDOR protection.
  */
 export async function deleteBill(uid, billId) {
-  // Get the bill to find the image path
+  if (!uid || !billId) throw new Error('Unauthorized request');
+
+  // Verify ownership before deleting
   const bill = await getBillById(uid, billId);
 
-  // Delete image from storage if it exists
   if (bill.imagePath) {
     try {
       const storageRef = ref(storage, bill.imagePath);
@@ -156,7 +216,6 @@ export async function deleteBill(uid, billId) {
     }
   }
 
-  // Delete the Firestore document
   const docRef = doc(db, 'users', uid, 'bills', billId);
   await deleteDoc(docRef);
 }
@@ -165,13 +224,14 @@ export async function deleteBill(uid, billId) {
  * Get monthly spending statistics.
  */
 export async function getMonthlyStats(uid, month, year) {
+  if (!uid) throw new Error('Unauthorized request');
+
   const bills = await getBills(uid, { month, year });
 
   const totalSpent = bills.reduce((sum, b) => sum + (b.amount || 0), 0);
   const billCount = bills.length;
   const avgPerBill = billCount > 0 ? totalSpent / billCount : 0;
 
-  // Category breakdown
   const byCategory = {};
   bills.forEach((b) => {
     const cat = b.category || 'other';
@@ -182,7 +242,6 @@ export async function getMonthlyStats(uid, month, year) {
     byCategory[cat].count += 1;
   });
 
-  // Daily breakdown
   const byDay = {};
   bills.forEach((b) => {
     if (b.date) {
@@ -192,7 +251,6 @@ export async function getMonthlyStats(uid, month, year) {
     }
   });
 
-  // Top merchants
   const byMerchant = {};
   bills.forEach((b) => {
     const merchant = b.merchant || 'Unknown';
@@ -220,16 +278,26 @@ export async function getMonthlyStats(uid, month, year) {
 }
 
 /**
- * Export bills as CSV string.
+ * Export bills as CSV string with CSV Injection Protection.
+ * Prefixes sensitive values starting with =, +, -, @ with a single quote to prevent CSV Formula Injection in Excel/Google Sheets.
  */
 export function exportToCSV(bills) {
+  const sanitizeCSVCell = (val) => {
+    let str = String(val || '').replace(/"/g, '""');
+    // Prevent CSV Formula Injection
+    if (/^[=+\-@\t\r]/.test(str)) {
+      str = "'" + str;
+    }
+    return `"${str}"`;
+  };
+
   const headers = ['Date', 'Merchant', 'Amount', 'Category', 'Notes'];
   const rows = bills.map((b) => [
-    b.date || '',
-    `"${(b.merchant || '').replace(/"/g, '""')}"`,
+    sanitizeCSVCell(b.date),
+    sanitizeCSVCell(b.merchant),
     b.amount || 0,
-    b.category || '',
-    `"${(b.notes || '').replace(/"/g, '""')}"`,
+    sanitizeCSVCell(b.category),
+    sanitizeCSVCell(b.notes),
   ]);
 
   return [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
