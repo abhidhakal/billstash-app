@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, FileText, ScanLine, BarChart2, Settings, Receipt, Plus } from 'lucide-react';
+import { Home, FileText, ScanLine, BarChart2, Settings, Plus } from 'lucide-react';
 
 const navItems = [
   { path: '/', icon: Home, label: 'Home' },
@@ -20,7 +20,7 @@ export default function BottomNav() {
       className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around h-[var(--bottom-nav-height)] bg-[var(--bg-card)] border-t border-[var(--border)] pb-[env(safe-area-inset-bottom,0px)] md:top-0 md:bottom-0 md:right-auto md:w-[var(--sidebar-width)] md:h-dvh md:flex-col md:items-stretch md:justify-start md:p-6 md:gap-2 md:border-t-0 md:border-r"
     >
       <div className="hidden md:flex items-center gap-3 px-3 py-2 mb-4 text-[var(--text-primary)] text-lg font-bold tracking-tight">
-        <Receipt size={22} strokeWidth={1.5} className="text-[var(--accent)]" />
+        <img src="/icons/billstash-logo.png" alt="BillStash Logo" className="w-8 h-8 rounded-lg object-contain" />
         <span>BillStash</span>
       </div>
 
