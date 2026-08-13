@@ -1,0 +1,143 @@
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.detail-header-actions {
+  display: flex;
+  gap: var(--space-1);
+}
+
+/* Image */
+.detail-image {
+  position: relative;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  margin-bottom: var(--space-4);
+  cursor: pointer;
+}
+
+.detail-image img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+.detail-image-hint {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.6));
+  color: white;
+  font-size: var(--font-xs);
+}
+
+.detail-image-full {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  animation: fadeIn 0.2s ease;
+}
+
+.detail-image-full img {
+  max-width: 95%;
+  max-height: 90vh;
+  object-fit: contain;
+}
+
+/* Info Card */
+.detail-info {
+  padding: var(--space-5);
+  margin-bottom: var(--space-4);
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.detail-row:last-child {
+  border-bottom: none;
+}
+
+.detail-row-main {
+  padding-bottom: var(--space-4);
+  margin-bottom: var(--space-1);
+}
+
+.detail-merchant {
+  font-size: var(--font-lg);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.detail-amount {
+  font-size: var(--font-xl);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.detail-label {
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+}
+
+.detail-value {
+  font-size: var(--font-sm);
+  color: var(--text-primary);
+  text-align: right;
+}
+
+/* Edit Form */
+.detail-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.detail-edit-actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.detail-edit-actions .btn {
+  flex: 1;
+}
+
+/* Raw Text */
+.detail-raw {
+  margin-bottom: var(--space-4);
+}
+
+.detail-raw-text {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: var(--font-xs);
+  color: var(--text-secondary);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  margin-top: var(--space-2);
+  max-height: 300px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

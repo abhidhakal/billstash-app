@@ -1,0 +1,52 @@
+.bills-search-row {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.bills-search {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.bills-search input {
+  padding-left: 40px;
+}
+
+.bills-search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.bills-filters {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  padding: var(--space-4);
+  background-color: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-light);
+}
+
+.bills-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.bills-filter-full {
+  grid-column: 1 / -1;
+}
+
+.bills-list {
+  overflow: hidden;
+}
+
+.bills-list-inner {
+  padding: 0 var(--space-4);
+}
