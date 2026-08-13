@@ -13,6 +13,10 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
 
+if (!firebaseConfig.apiKey) {
+  console.error('BillStash: Missing Firebase API key. Ensure VITE_FIREBASE_API_KEY is set in environment variables.');
+}
+
 const app = initializeApp(firebaseConfig);
 
 export const auth = getAuth(app);
